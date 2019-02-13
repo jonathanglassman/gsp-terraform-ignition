@@ -100,7 +100,7 @@ resource "aws_launch_configuration" "worker" {
 
   root_block_device {
     volume_type = "gp2"
-    volume_size = "40"
+    volume_size = "200"
   }
 
   security_groups = ["${aws_security_group.worker.id}"]
