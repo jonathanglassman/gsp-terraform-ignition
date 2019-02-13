@@ -32,7 +32,7 @@ module "ci-system" {
             createTeamNamespaces: false
         persistence:
           worker:
-            size: 30Gi
+            size: 100Gi
     harbor:
       harborAdminPassword: "${random_string.harbor_password.result}"
       secretKey: "${random_string.harbor_secret_key.result}"
