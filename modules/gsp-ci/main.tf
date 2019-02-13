@@ -30,6 +30,9 @@ module "ci-system" {
           kubernetes:
             namespacePrefix: "${module.ci-system.release-name}-"
             createTeamNamespaces: false
+        persistence:
+          worker:
+            size: 30Gi
     harbor:
       harborAdminPassword: "${random_string.harbor_password.result}"
       secretKey: "${random_string.harbor_secret_key.result}"
