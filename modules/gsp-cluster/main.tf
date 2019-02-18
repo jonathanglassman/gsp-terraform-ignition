@@ -115,6 +115,8 @@ module "monitoring-system" {
     prometheus-operator:
       prometheus:
         prometheusSpec:
+          serviceMonitorSelector: {}
+          serviceMonitorNamespaceSelector: {}
           externalLabels:
             clustername: "${var.cluster_name}.${var.dns_zone}"
 EOF
