@@ -102,7 +102,7 @@ module "monitoring-system" {
   enabled               = "${local.enabled_addons["monitoring"]}"
   namespace             = "monitoring-system"
   chart_git             = "https://github.com/alphagov/gsp-monitoring-system.git"
-  chart_ref             = "master"
+  chart_ref             = "enable-prometheus"
   cluster_name          = "${var.cluster_name}"
   cluster_domain        = "${var.cluster_name}.${var.dns_zone}"
   addons_dir            = "addons/${var.cluster_name}"
