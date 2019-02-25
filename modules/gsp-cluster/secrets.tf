@@ -1,3 +1,6 @@
+# #########################################################################
+# Remove this file once have passed in the sealed secrets into this module.
+# #########################################################################
 ## TODO: Persist that key some other way than `prevent_destroy`
 resource "tls_private_key" "sealed-secrets-key" {
   algorithm = "RSA"

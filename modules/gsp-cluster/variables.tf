@@ -113,3 +113,13 @@ variable "codecommit_init_role_arn" {
   type    = "string"
   default = ""
 }
+
+variable "cert_pem" {
+  description = "Sealed secrets cert"
+  type        = "string"
+}
+
+variable "private_key_pem" {
+  description = "Sealed secrets private key"
+  type        = "string"
+}

@@ -167,8 +167,8 @@ module "secrets-system" {
 
   values = <<EOF
     encryption:
-      public_certificate: ${base64encode(tls_self_signed_cert.sealed-secrets-certificate.cert_pem)}
-      private_key: ${base64encode(tls_private_key.sealed-secrets-key.private_key_pem)}
+      public_certificate: ${base64encode(var.cert_pem)}
+      private_key: ${base64encode(var.private_key_pem)}
 EOF
 }
 
