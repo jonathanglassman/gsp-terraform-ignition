@@ -4,10 +4,10 @@ output "private-subnet-ids" {
 
 output "cert_pem" {
   description = "Sealed secrets certificate"
-  value       = "${module.gsp-persistent.cert_pem}"
+  value       = "${tls_self_signed_cert.sealed-secrets-certificate.cert_pem}"
 }
 
 output "private_key_pem" {
   description = "Sealed secrets private key"
-  value       = "${module.gsp-persistent.private_key_pem}"
+  value       = "${tls_private_key.sealed-secrets-key.private_key_pem}"
 }
