@@ -47,6 +47,7 @@ module "k8s-cluster" {
   k8s_tag                  = "${var.k8s_tag}"
   controller_count         = "${var.controller_count}"
   worker_count             = "${var.worker_count}"
+  ci_count                 = "${var.ci_count}"
   controller_instance_type = "${var.controller_instance_type}"
   worker_instance_type     = "${var.worker_instance_type}"
   s3_user_data_policy_arn  = "${aws_iam_policy.s3-user-data-policy.arn}"

@@ -61,6 +61,11 @@ variable "worker_count" {
   default = "2"
 }
 
+variable "ci_count" {
+  type    = "string"
+  default = "2"
+}
+
 variable "etcd_instance_type" {
   type    = "string"
   default = "t2.small"

@@ -88,5 +88,10 @@ variable "controller_count" {
 
 variable "worker_count" {
   type    = "string"
-  default = "2"
+  default = "3"
+}
+
+variable "ci_count" {
+  type    = "string"
+  default = "3"
 }

@@ -117,6 +117,29 @@ resource "aws_launch_configuration" "worker" {
   iam_instance_profile = "${aws_iam_instance_profile.worker_profile.name}"
 }
 
+resource "aws_launch_configuration" "ci" {
+  name_prefix       = "${var.cluster_name}-ci-"
+  image_id          = "${data.aws_ami.coreos.image_id}"
+  instance_type     = "${var.worker_instance_type}"
+  enable_monitoring = false
+
+  user_data = "${data.ignition_config.ci-actual.rendered}"
+
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = "40"
+  }
+
+  security_groups = ["${aws_security_group.worker.id}"]
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = ["image_id"]
+  }
+
+  iam_instance_profile = "${aws_iam_instance_profile.worker_profile.name}"
+}
+
 resource "aws_autoscaling_group" "workers" {
   name = "${var.cluster_name}-worker"
 
@@ -142,6 +165,46 @@ resource "aws_autoscaling_group" "workers" {
     {
       key                 = "Name"
       value               = "${var.cluster_name}-worker"
+      propagate_at_launch = true
+    },
+    {
+      key                 = "KubernetesCluster"
+      value               = "${var.cluster_name}"
+      propagate_at_launch = true
+    },
+    {
+      key                 = "kubernetes.io/cluster/${var.cluster_name}"
+      value               = "1"
+      propagate_at_launch = true
+    },
+  ]
+}
+
+resource "aws_autoscaling_group" "ci" {
+  name = "${var.cluster_name}-ci"
+
+  desired_capacity          = "${var.ci_count}"
+  min_size                  = "${var.ci_count}"
+  max_size                  = "${var.ci_count}"
+  default_cooldown          = 30
+  health_check_grace_period = 30
+
+  vpc_zone_identifier = ["${var.subnet_ids}"]
+
+  launch_configuration = "${aws_launch_configuration.ci.name}"
+
+  target_group_arns = ["${var.worker_target_group_arns}"]
+
+  # Waiting for instance creation delays adding the ASG to state. If instances
+  # can't be created (e.g. spot price too low), the ASG will be orphaned.
+  # Orphaned ASGs escape cleanup, can't be updated, and keep bidding if spot is
+  # used. Disable wait to avoid issues and align with other clouds.
+  wait_for_capacity_timeout = "0"
+
+  tags = [
+    {
+      key                 = "Name"
+      value               = "${var.cluster_name}-ci"
       propagate_at_launch = true
     },
     {
