@@ -16,11 +16,6 @@ module "k8s-cluster" {
   )}"]
 }
 
-resource "local_file" "aws-auth" {
-  filename = "addons/${var.cluster_name}/aws-auth.yaml"
-  content  = "${module.k8s-cluster.aws-auth}"
-}
-
 locals {
   default_addons = {
     ingress    = 1

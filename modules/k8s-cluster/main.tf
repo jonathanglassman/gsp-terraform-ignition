@@ -107,13 +107,3 @@ data "template_file" "kubeconfig" {
   }
 }
 
-data "template_file" "aws-auth" {
-  template = "${file("${path.module}/data/aws-auth.yaml")}"
-
-  vars {
-    bootstrapper_role_mappings = "${join("\n", formatlist(var.bootstrapper_role_arn_mapping_template, list(aws_cloudformation_stack.worker-nodes.outputs["NodeInstanceRole"], aws_cloudformation_stack.kiam-server-nodes.outputs["NodeInstanceRole"], aws_cloudformation_stack.ci-nodes.outputs["NodeInstanceRole"])))}"
-    iam_admin_role_mappings    = "${join("\n", formatlist(var.admin_role_arn_mapping_template, var.admin_role_arns))}"
-    iam_sre_role_mappings      = "${join("\n", formatlist(var.sre_role_arn_mapping_template, var.sre_role_arns))}"
-    iam_dev_role_mappings      = "${join("\n", formatlist(var.dev_role_arn_mapping_template, var.dev_role_arns))}"
-  }
-}
