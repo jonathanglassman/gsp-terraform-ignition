@@ -41,18 +41,3 @@ resource "aws_iam_policy_attachment" "flux-helm-operator-code-commit" {
   roles      = ["${aws_iam_role.flux-helm-operator.name}"]
   policy_arn = "${aws_iam_policy.flux-helm-operator-code-commit.arn}"
 }
-
-data "template_file" "flux" {
-  template = "${file("${path.module}/data/flux.yaml")}"
-
-  vars {
-    namespace             = "flux-system"
-    aws_role_name         = "${aws_iam_role.flux-helm-operator.name}"
-    permitted_roles_regex = "^${aws_iam_role.flux-helm-operator.name}$"
-  }
-}
-
-resource "local_file" "flux" {
-  filename = "addons/${var.cluster_name}/flux.yaml"
-  content  = "${data.template_file.flux.rendered}"
-}
