@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ${namespace}
+  name: {{ .Values.fluxNamespace }}
   annotations:
-    iam.amazonaws.com/permitted: "${permitted_roles_regex}"
+    iam.amazonaws.com/permitted: {{ .Values.fluxPermittedRolesRegex | quote }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -12,7 +12,7 @@ metadata:
   labels:
     name: flux
   name: flux
-  namespace: ${namespace}
+  namespace: {{ .Values.fluxNamespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
@@ -40,7 +40,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: flux
-    namespace: ${namespace}
+    namespace: {{ .Values.fluxNamespace }}
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -109,7 +109,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flux-helm-operator
-  namespace: ${namespace}
+  namespace: {{ .Values.fluxNamespace }}
 spec:
   replicas: 1
   selector:
@@ -122,7 +122,7 @@ spec:
       labels:
         name: flux-helm-operator
       annotations:
-        iam.amazonaws.com/role: "${aws_role_name}"
+        iam.amazonaws.com/role: {{ .Values.fluxHelmOperatorRole | quote }}
     spec:
       serviceAccount: flux
       volumes:
