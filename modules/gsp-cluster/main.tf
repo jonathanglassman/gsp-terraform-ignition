@@ -42,12 +42,6 @@ resource "local_file" "flux-reporter" {
   content  = "${data.template_file.flux-reporter.rendered}"
 }
 
-resource "local_file" "cert-manager-crds" {
-  count    = "${local.enabled_addons["ingress"]}"
-  filename = "addons/${var.cluster_name}/cert-manager-crds.yaml"
-  content  = "${file("${path.module}/data/cert-manager-crds.yaml")}"
-}
-
 module "monitoring-system" {
   source = "../flux-release"
 
