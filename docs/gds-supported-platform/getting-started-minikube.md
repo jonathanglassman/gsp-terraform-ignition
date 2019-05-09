@@ -1,294 +1,237 @@
-# Getting started with minikube
+# Getting started with Minikube
 
-### Overview
+## Set up Minikube
 
-A hands on introduction to Kubernetes covering concepts that are beneficial for working with the RE managed kubernetes platform.
+1. Run the following in the command line to install [homebrew](https://brew.sh/):
 
-This exercise will take between 30-60mins and will cover:
+    ```
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    ```
 
-* How to setup minikube for a local kubernetes cluster.
-* Describing a [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) to run multiple instances of Pods for a hello world app
-* Describing a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) to route traffic to Pods inside the cluster
-* Describing an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) to route traffic to a Service from outside the cluster
-* Introduction to defining a [Helm chart](https://docs.helm.sh/developing_charts/) to package up all of the above
+1. Run the following in the command line to install [Minikube](https://kubernetes.io/docs/setup/minikube/)
 
-### Exercise
+    ```
+    brew cask install virtualbox  # if it fails, go to system preferences > security and allow Oracle access at the bottom
+    brew cask install minikube    # install minishift and kubernetes-cli
+    brew install kubernetes-helm
+    brew install jq
+    ```
 
-* Create a [Helm chart](https://docs.helm.sh/developing_charts/) for a simple hello world application based on nginx that can be deployed to a kubernetes cluster. 
+    _if it fails comment - which system preferences?_
 
-install [homebrew](https://brew.sh/) (if required) to install dependencies
+1. Run the following to start Minikube with an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller:
 
-```
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
+    ```
+    minikube start --vm-driver virtualbox
+    minikube addons enable ingress
+    minikube addons list
+    ```
 
-install minikube and dependencies using [homebrew](https://brew.sh/)
+1. Run the following to check that you can access your Minikube cluster using [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-```
-brew cask install virtualbox  # if it fails, go to system preferences > security and allow Oracle access at the bottom
-brew cask install minikube    # install minishift and kubernetes-cli
-brew install kubernetes-helm
-brew install jq
-```
+    ```
+    kubectl get nodes
+    ```
 
-start minikube with an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller
+    _what does success look like?_
 
-```
-minikube start --vm-driver virtualbox
-minikube addons enable ingress
-minikube addons list
-```
+1. Run the following to view Minikube using the Kubernetes web dashboard:
 
-check minikube is running
+    _do we need the comment?_
 
-```
-minikube status
-```
+    ```
+    minikube dashboard            # launch dashboard in default browser
+    ```
 
-check that we can access our minikube cluster using `kubectl`
+## Create a Helm chart
 
-```
-kubectl get nodes
-```
+The GDS Supported Platform uses a packaging format called [Helm charts](https://helm.sh/docs/developing_charts/). A chart is a collection of files that describe a related set of Kubernetes resources.
 
-check out minikube using the kubernetes web dashboard
+You create Helm charts as files in a directory. These files are then packaged into versioned archives that users can deploy.
 
-```
-minikube dashboard            # launch dashboad in default browser
-```
+1. Create a root directory in your GitHub repository. This directory will contain the chart.
 
-![](https://i.imgur.com/Ujw9EFh.png)
+1. Create a `Chart.yaml` file in the root directory with the following code:
 
+    ```
+    apiVersion: v1
+    appVersion: "1.0"
+    description: CHART_DESCRIPTION
+    name: CHART_NAME
+    version: 0.1.0
+    ```
 
-create a directory that will contain our "Chart" (collection of kubernetes resources)
+    This file defines metadata about the chart.
 
-```
-mkdir myapp
-cd myapp
-```
+1. Create a `templates` directory in the root directory. This directory contains all Kubernetes object definitions.
 
-A chart is a simple directory with "Chart.yaml" file, "values.yaml" file and a templates dir like:
+1. Create a `values.yaml` file in the root directory. This file sets the default values for your desired chart variables.
 
-```
-.
-├── Chart.yaml
-├── templates
-└── values.yaml
-```
+## Create a Kubernetes Deployment object
 
-So let's create these files ....create a Chart.yaml file that will define some metadata about this chart
+You run an app by creating a [Kubernetes Deployment object](https://kubernetes.io/docs/concepts/#kubernetes-objects). This object defines your app and its routes, databases and all other relevant information. You describe a Deployment in a YAML file.
 
-```
-apiVersion: v1
-appVersion: "1.0"
-description: My first helm chart
-name: myapp
-version: 0.1.0
-```
+1. Create a `deployment.yaml` file in the `templates` directory. The following example uses an [nginx](https://hub.docker.com/_/nginx/) container image called `myapp`. Replace this nginx container image with your app image:
 
-create a "templates" directory which will contain all of our kubernetes object definitions
-
-```
-mkdir templates
-```
-
-create an values.yaml file that can be used to set defaults for any variables we might use in our chart containing
-
-```
-replicas: 2 	# the number of pods
-```
-
-This sets the default number of pods to create and is referenced in the deployment template using ``{{ .Values.replicas }}``. 
-
-ok, we now have the boilerplate for an empty "Chart" and can start defining kubernetes resources
-
-First we will create a Deployment which will ensure than N replicas (instances) of our application container will be running. In this case the default is 2 as defined in `values.yaml` however this may be overridden.
-
-We will use an "nginx" container image to play the role of our application, but you could replace this with another Docker image if you want:
-
-Create a minimal `templates/deployment.yaml` that looks like:
-
-```
-apiVersion: apps/v1beta2
-kind: Deployment
-metadata:
-  name: {{ .Release.Name }}-myapp
-  labels:
-    app.kubernetes.io/name: myapp
-    app.kubernetes.io/instance: {{ .Release.Name }}
-spec:
-  replicas: {{ .Values.replicas }}
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: myapp
-      app.kubernetes.io/instance: {{ .Release.Name }}
-  template:
+    ```
+    apiVersion: apps/v1beta2
+    kind: Deployment
     metadata:
+      name: {{ .Release.Name }}-myapp
       labels:
         app.kubernetes.io/name: myapp
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
-      containers:
-        - name: myappcontainer
-          image: "nginx:latest"
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-```
+      replicas: {{ .Values.replicas }}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: myapp
+          app.kubernetes.io/instance: {{ .Release.Name }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: myapp
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          containers:
+            - name: myappcontainer
+              image: "nginx:latest" #Replace this with your app image
+              ports:
+                - name: http
+                  containerPort: 80
+                  protocol: TCP
+    ```
 
-The `{{ .Release.Name }}` variables will be populated when we "render" the chart.
-The ``{{ .Values.replicas }}`` variable is populated from the contents of the `values.yaml` file. 
- 
-Test out rendering the chart using the `helm template` command like:
+    Helm automatically populates the `{{ .Release.Name }}` and `{{ .Values.replicas }}` variables when you render the chart.
 
-```
-helm template --name example .
-```
+1. Run the following command in the root directory to render the chart and send the output to an `output` directory:
 
-you should see the rendered version of the kubernetes objects dumped to stdout
+    ```
+    mkdir output
+    helm template --name example --output-dir=output .
+    ```
 
-instead of dumping to stdout, we can write the output to a directory:
+1. Check `stdout` to see if the chart rendered correctly.
 
-```
-mkdir output
-helm template --name example --output-dir=output .
-```
+1. Run the following command to install the contents of the `output` dir to the Minikube cluster:
 
-we can now use `kubectl` to "apply" the contents of the "output" dir to our minikube cluster
+    ```
+    kubectl apply -R -f output/
+    ```
+1. Run the following to list the Deployments installed in the cluster:
 
-```
-kubectl apply -R -f output/
-```
-
-`apply` means, install the declarations into the cluster
-
-The `-R` flag means, find all the kubernetes resource definitions recursively in the directory specified by the `-f` flag
-
-We should now be able to list the deployments installed in the cluster with:
-
-```
-kubectl get deployments
-```
-
-The Deployment will manage the creation of Pods for our app image
-
-To check the state of pods do
-
-```
-kubectl get pods 
-```
+    ```
+    kubectl get deployments
+    ```
 
 
-which should show something like
+1. Run the following to check that the pods are running:
 
-```
-NAME                                   READY   STATUS           RESTARTS   AGE
-example-myapp-6d76dc8fbb-ptnm9         1/1     Running          0          25s
-example-myapp-c8fbb6d76d-44nm9         1/1     Running          0          25s
-```
+    ```
+    kubectl get pods
+    ```
+    _Is this necessary to do at this point?_
 
-If you see a status of something other than `Running`, then you may have to try again in a few seconds
+## Create a service
 
-... ok so we now have 2x Pods running instances of our app (nginx) in the cluster, but all Pods in the cluster are running on an internal only network and as such it is not accessible from the outside.
+By default, your apps are not accessible to the public. To expose them to the public, you must set up a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) and an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) into the Kubernetes cluster.
 
-We can tunnel into the cluster using `kubectl port-forward` to check if our Pod is serving requests:
+Setting up a Service creates a stable endpoint that acts like an internal load balancer to send traffic to your Deployment's Pods.
 
-```
-kubectl port-forward deployment/example-myapp 8080:80
-```
+1. Create a `service.yaml` file in the `templates` directory with the following code:
 
-this will tunnel http://localhost:8080 -> into the cluster -> pod ... so you can use a browser to check it's returning the "welcome to nginx" default page
+    ```
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: {{ .Release.Name }}-APP_NAME
+      labels:
+        app.kubernetes.io/name: APP_NAME
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      type: ClusterIP
+      ports:
+        - port: 80
+          targetPort: http
+          protocol: TCP
+          name: http
+      selector:
+        app.kubernetes.io/name: APP_NAME
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    ```
+    Helm automatically populates the `{{ .Release.Name }}` variable when you render the chart.
 
-tunnelling into the cluster isn't a very practical way to expose your service so let's improve that.
 
-The first thing we need to do is add a `Service` definition to our Chart. 
+1. Render your template again:
 
-create a `templates/service.yaml` file like:
+    ```
+    helm template --name=example --output-dir=output .
+    ```
 
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-myapp
-  labels:
-    app.kubernetes.io/name: myapp
-    app.kubernetes.io/instance: {{ .Release.Name }}
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app.kubernetes.io/name: myapp
-    app.kubernetes.io/instance: {{ .Release.Name }}
-```
+1. Re-apply the template to the cluster:
 
-The `Service` will act like a mini internal load-balancer giving us a single internal endpoint that points to each running Pod that matches the labels in the `selector` description.
+    ```
+    kubectl apply -R -f output/
+    ```
 
-We'll need to re-render our template...
+1. Use `kubectl port-forward` to tunnel to the `Service` endpoint to check that the endpoint is working:
 
-```
-helm template --name=example --output-dir=output .
-```
+    ```
+    kubectl port-forward service/example-myapp 8080:80
+    ```
 
-...and re-apply it to the cluster...
+## Create an Ingress
 
-```
-kubectl apply -R -f output/
-```
+You must define an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) to route public internet traffic to the stable endpoint you created when you set up the Service.
 
-As before we can use `kubectl port-forward` to tunnel this time to the `Service` endpoint to check it's working:
+1. Create a `ingress.yaml` file in the `templates` directory with the following code:
 
-```
-kubectl port-forward service/example-myapp 8080:80
-```
+    ```
+    apiVersion: extensions/v1beta1
+    kind: Ingress
+    metadata:
+      name: {{ .Release.Name }}-myapp
+      annotations:
+          nginx.ingress.kubernetes.io/rewrite-target: "/"
+    spec:
+      rules:
+      - host:  {{ .Release.Name }}.{{ .Values.global.cluster.domain }}
+        http:
+          paths:
+          - backend:
+              serviceName: example-myapp
+              servicePort: 80
+            path: /
+    ```
 
-This still hasn't helped us expose our app to the public, but has given us a stable endpoint to direct traffic to
+1. Render your template again:
 
-To route traffic from the public we need to define an `Ingress` record.
+    ```
+    helm template --name=example --output-dir=output .
+    ```
 
-Create a `templates/ingress.yaml` file:
+1. Re-apply the template to the cluster:
 
-```
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: {{ .Release.Name }}-myapp
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: "/"
-spec:
-  rules:
-  - host: www.myapp.com
-    http:
-      paths:
-      - backend:
-          serviceName: example-myapp
-          servicePort: 80
-        path: /
-```
+    ```
+    kubectl apply -f -
+    ```
+1. Check that you created the Ingress successfully:
 
-Re-render the Chart and re-apply to the cluster (we'll do it in one go this time just for fun):
+    ```
+    kubectl get ingress
+    ```
 
-```
-helm template --name=example . | kubectl apply -f -
-```
+    Example output:
 
-Check the ingress is created:
+    ```
+    kubectl get ingress
+    NAME            HOSTS           ADDRESS     PORTS   AGE
+    example-myapp   www.myapp.com   10.0.2.15   80      3m31s
+    ```
 
-```
-kubectl get ingress
-```
+## Test that the Ingress is working
 
-which should show something like:
-
-```
-kubectl get ingress
-NAME            HOSTS           ADDRESS     PORTS   AGE
-example-myapp   www.myapp.com   10.0.2.15   80      3m31s
-```
+_Do we need this bit? Have not changed content from original_
 
 Our ingress route should now be working and routing traffic for the `www.myapp.com` host from the exposed minikube IP to our Service and on to our Pods running nginx... we can test this using curl:
 
@@ -343,6 +286,10 @@ The `-f` switch steams updates from the log as they happen and the pod name is t
 172.17.0.2 - - [10/Jan/2019:11:12:44 +0000] "GET / HTTP/1.1" 200 612 "-" "curl/7.54.0" "192.168.99.1"
 172.17.0.2 - - [10/Jan/2019:11:13:03 +0000] "GET / HTTP/1.1" 200 612 "-" "curl/7.54.0" "192.168.99.1"
 ```
+
+## Scale deployment up to ten nginx instances
+
+_Do we need this bit? Have not changed content from original_
 
 Now lets scale our deployment up to ten nginx instances. We can override the replicas setting during the templating as folllows:
 
@@ -448,6 +395,10 @@ example-myapp-768cd7d675-zsdm7   1/1     Running   0          3m37s
 
 ```
 
+## Remove Minikube
+
+_Do we need this bit? Have not changed content from original_
+
 Now lets scale back to 3 pods
 
 
@@ -486,26 +437,25 @@ which confirms that its all gone
 No resources found.
 ```
 
-Finally we can stop minikube 
+Finally we can stop minikube
 
 ```
 minikube stop
 ```
 
-and if required remove all the sofware 
+and if required remove all the sofware
 
 ```
-brew cask uninstall virtualbox 
+brew cask uninstall virtualbox
 brew cask uninstall minikube
 brew uninstall kubernetes-cli
 brew uninstall kubernetes-helm
 brew uninstall jq
 ```
 
-DONE
-
----
 ### References
+
+_do we need these references or any others?_
 
 |Topic|Description|
 |----|-----------|
@@ -514,4 +464,4 @@ DONE
 |[helm](https://docs.helm.sh/)| helm package manager for kubernetes|
 |[jq](https://stedolan.github.io/jq/manual/)| json wrangling filter |
 |[minikube](https://github.com/kubernetes/minikube)|local kubernetes |
-|[virtualbox](https://www.virtualbox.org/manual/UserManual.html)|hypervisor 
+|[virtualbox](https://www.virtualbox.org/manual/UserManual.html)|hypervisor
