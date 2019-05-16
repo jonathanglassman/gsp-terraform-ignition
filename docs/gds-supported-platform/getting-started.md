@@ -160,6 +160,7 @@ You run an app by creating a [Kubernetes Deployment object](https://kubernetes.i
     ```
     kubectl get pods
     ```
+
     _Is this necessary to do at this point?_
 
 ## Create a service
