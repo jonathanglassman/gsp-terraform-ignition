@@ -125,6 +125,7 @@ You run an app by creating a [Kubernetes Deployment object](https://kubernetes.i
           containers:
             - name: prototype-kit
               image: "prototype-kit:latest"
+              imagePullPolicy: IfNotPresent
               ports:
                 - name: http
                   containerPort: 3000
@@ -137,7 +138,7 @@ You run an app by creating a [Kubernetes Deployment object](https://kubernetes.i
 
     ```
     mkdir output
-    helm template --name example --output-dir=output .
+    helm template --name prototype-kit --output-dir=output chart
     ```
 
 1. Check `stdout` to see if the chart rendered correctly.
@@ -163,7 +164,7 @@ You run an app by creating a [Kubernetes Deployment object](https://kubernetes.i
 
 ## Create a service
 
-By default, your apps are not accessible to the public. To expose them to the public, you must set up a [VirtualService]() and `port-forward` to the cluster's Ingress Gateway.
+By default, your apps are not accessible to the public. To expose them to the public, you must set up a [Service](), [VirtualService]() and `port-forward` to the cluster's Ingress Gateway.
 
 Setting up a VirtualService creates a stable endpoint that acts like an internal load balancer to send traffic to your Deployment's Pods.
 
@@ -173,28 +174,48 @@ Setting up a VirtualService creates a stable endpoint that acts like an internal
     apiVersion: v1
     kind: Service
     metadata:
-      name: {{ .Release.Name }}-APP_NAME
+      name: {{ .Release.Name }}-web
       labels:
-        app.kubernetes.io/name: APP_NAME
+        app.kubernetes.io/name: web
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       type: ClusterIP
       ports:
-        - port: 80
+        - port: 3000
           targetPort: http
           protocol: TCP
           name: http
       selector:
-        app.kubernetes.io/name: APP_NAME
+        app.kubernetes.io/name: web
         app.kubernetes.io/instance: {{ .Release.Name }}
     ```
+
+    ```
+    apiVersion: networking.istio.io/v1alpha3
+    kind: VirtualService
+    metadata:
+      name: prototype-kit
+    spec:
+      hosts:
+      - "prototype-kit.local.govsandbox.uk"
+      gateways:
+      - "gsp-gsp-cluster.gsp-system"
+      http:
+      - route:
+        - destination:
+            host: prototype-kit-web
+            port:
+              number: 3000
+
+    ```
+
     Helm automatically populates the `{{ .Release.Name }}` variable when you render the chart.
 
 
 1. Render your template again:
 
     ```
-    helm template --name=example --output-dir=output .
+    helm template --name prototype-kit --output-dir=output chart
     ```
 
 1. Re-apply the template to the cluster:
