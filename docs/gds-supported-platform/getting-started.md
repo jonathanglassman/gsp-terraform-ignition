@@ -1,6 +1,8 @@
-# Getting started with Minikube
+# Getting started
 
 ## Set up Minikube
+
+1. Install and configure Golang
 
 1. Run the following in the command line to install [homebrew](https://brew.sh/):
 
@@ -8,39 +10,37 @@
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     ```
 
-1. Run the following in the command line to install [Minikube](https://kubernetes.io/docs/setup/minikube/)
+1. Run the following in the command line to install `kubectl` and `helm`:
 
     ```
-    brew cask install virtualbox  # if it fails, go to system preferences > security and allow Oracle access at the bottom
-    brew cask install minikube    # install minishift and kubernetes-cli
+    brew install kubernetes-cli
     brew install kubernetes-helm
-    brew install jq
     ```
 
-    _if it fails comment - which system preferences?_
+1. Run the following the command line to install [`kind`]():
 
-1. Run the following to start Minikube with an [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller:
+1. Clone the GSP repo:
 
     ```
-    minikube start --vm-driver virtualbox
-    minikube addons enable ingress
-    minikube addons list
+    git clone https://github.com/alphagov/gsp-terraform-ignition.git
     ```
 
-1. Run the following to check that you can access your Minikube cluster using [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+1. Run the following to create a local GSP cluter:
+
+    ```
+    ./scripts/gsp-local.sh create
+    ```
+
+1. Configure `kubectl` to use the local GSP cluster:
+
+		```
+		export KUBECONFIG="$(kind get kubeconfig-path --name="gsp-local")"
+		```
+
+1. Run the following to check that you can access your local cluster using [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
     ```
     kubectl get nodes
-    ```
-
-    _what does success look like?_
-
-1. Run the following to view Minikube using the Kubernetes web dashboard:
-
-    _do we need the comment?_
-
-    ```
-    minikube dashboard            # launch dashboard in default browser
     ```
 
 ## Create a Helm chart
@@ -302,7 +302,6 @@ Note the default replicas setting is now set to 10 in the generated yaml
 
 ```
 ---
-# Source: myapp/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -321,7 +320,6 @@ spec:
     app.kubernetes.io/name: myapp
     app.kubernetes.io/instance: example
 ---
-# Source: myapp/templates/deployment.yaml
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -350,7 +348,6 @@ spec:
               protocol: TCP
 
 ---
-# Source: myapp/templates/ingress.yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -395,63 +392,13 @@ example-myapp-768cd7d675-zsdm7   1/1     Running   0          3m37s
 
 ```
 
-## Remove Minikube
+## Destroy cluster
 
-_Do we need this bit? Have not changed content from original_
+Run the following command to destroy the cluster:
 
-Now lets scale back to 3 pods
-
-
-```
-helm template --name=example --set-string replicas=3 .  | kubectl apply -f -
-```
-Check the running pods again to confirm that there are now three
-```
-kubectl get pods
-```
-
-```
-NAME                             READY   STATUS    RESTARTS   AGE
-example-myapp-768cd7d675-2vwxg   1/1     Running   0          5m14s
-example-myapp-768cd7d675-qw4lj   1/1     Running   0          5m14s
-example-myapp-768cd7d675-tvvwq   1/1     Running   0          5m14s
-```
-
-Finally we can remove our deployment, the instances, the service and the ingress
-
-```
-helm template --name=example --set-string replicas=3 .  | kubectl delete -f -
-```
-
-```
-service "myapp" deleted
-deployment.apps "myapp" deleted
-ingress.extensions "myapp" deleted
-```
-
-```
-kubectl get pods
-```
-which confirms that its all gone
-```
-No resources found.
-```
-
-Finally we can stop minikube
-
-```
-minikube stop
-```
-
-and if required remove all the sofware
-
-```
-brew cask uninstall virtualbox
-brew cask uninstall minikube
-brew uninstall kubernetes-cli
-brew uninstall kubernetes-helm
-brew uninstall jq
-```
+		```
+		./scripts/gsp-local.sh delete
+		```
 
 ### References
 
