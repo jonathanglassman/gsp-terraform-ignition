@@ -51,6 +51,8 @@
 git clone https://github.com/alphagov/govuk-prototype-kit
 ```
 
+1. Create a `Dockerfile` for the prototype-kit:
+
 ```
 FROM node:8.12-alpine
 
@@ -66,6 +68,8 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
+1. Build, test and copy the image into the cluster:
+
 ```
 docker build . --tag prototype-kit:latest
 docker run --publish 3000:3000 prototype-kit:latest
@@ -76,9 +80,9 @@ The GDS Supported Platform uses a packaging format called [Helm charts](https://
 
 You create Helm charts as files in a directory. These files are then packaged into versioned archives that users can deploy.
 
-1. Create a root directory in your GitHub repository. This directory will contain the chart.
+1. Create a `chart/` directory inside `govuk-prototype-kit`
 
-1. Create a `Chart.yaml` file in the root directory with the following code:
+1. Create a `Chart.yaml` file in the this directory with the following code:
 
     ```
     apiVersion: v1
@@ -90,9 +94,7 @@ You create Helm charts as files in a directory. These files are then packaged in
 
     This file defines metadata about the chart.
 
-1. Create a `templates` directory in the root directory. This directory contains all Kubernetes object definitions.
-
-1. Create a `values.yaml` file in the root directory. This file sets the default values for your desired chart variables.
+1. Create a `templates` directory in the `chart/` directory. This directory contains all Kubernetes object definitions.
 
 ## Create a Kubernetes Deployment object
 
@@ -122,7 +124,7 @@ You run an app by creating a [Kubernetes Deployment object](https://kubernetes.i
         spec:
           containers:
             - name: prototype-kit
-              image: "prototype-kit:latest" #Replace this with your app image
+              image: "prototype-kit:latest"
               ports:
                 - name: http
                   containerPort: 3000
