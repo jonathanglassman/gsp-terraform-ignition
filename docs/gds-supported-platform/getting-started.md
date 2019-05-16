@@ -1,6 +1,6 @@
 # Getting started
 
-## Set up Minikube
+## Set up
 
 1. Install and configure Golang
 
